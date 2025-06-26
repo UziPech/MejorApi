@@ -29,17 +29,22 @@ namespace ParInpar.Controllers
         }
 
         [HttpGet("verificar/{numero}")]
-        public IActionResult Verificar(int numero)
+        public IActionResult Verificar(string numero)
         {
-            var resultado = numero % 2 == 0 ? "Par" : "Impar";
-            return Ok(new { numero, resultado });
+            if (!int.TryParse(numero, out int valor) || !EsNumeroValido(valor))
+            {
+                return BadRequest(new { mensaje = "El número ingresado es inválido. Solo se permiten enteros positivos menores o iguales a 100000." });
+            }
+
+            var resultado = valor % 2 == 0 ? "Par" : "Impar";
+            return Ok(new { numero = valor, resultado });
         }
 
         [HttpPost("verificar")]
         public IActionResult VerificarPost([FromBody] NumeroVerificado numero)
         {
             if (!EsNumeroValido(numero.Valor))
-                return BadRequest(new { mensaje = "Solo se permiten números enteros positivos menores a 100000." });
+                return BadRequest(new { mensaje = "El número ingresado es inválido. Solo se permiten enteros positivos menores o iguales a 100000." });
 
             var resultado = numero.Valor % 2 == 0 ? "Par" : "Impar";
             return Ok(new { numero.Valor, resultado });
@@ -50,7 +55,7 @@ namespace ParInpar.Controllers
         public IActionResult Guardar([FromBody] NumeroVerificado numero)
         {
             if (!EsNumeroValido(numero.Valor))
-                return BadRequest(new { mensaje = "Solo se permiten números enteros positivos menores a 100000." });
+                return BadRequest(new { mensaje = "El número ingresado es inválido. Solo se permiten enteros positivos menores o iguales a 100000." });
 
             try
             {
@@ -70,7 +75,7 @@ namespace ParInpar.Controllers
         public IActionResult Editar(int id, [FromBody] NumeroVerificado numeroEditado)
         {
             if (!EsNumeroValido(numeroEditado.Valor))
-                return BadRequest(new { mensaje = "Solo se permiten números enteros positivos menores a 100000." });
+                return BadRequest(new { mensaje = "El número ingresado es inválido. Solo se permiten enteros positivos menores o iguales a 100000." });
 
             var numero = _context.Numeros.FirstOrDefault(n => n.Id == id);
             if (numero == null)
@@ -115,7 +120,7 @@ namespace ParInpar.Controllers
         public IActionResult ObtenerNumerosPaginado(int page = 1, int pageSize = 10)
         {
             if (!EsNumeroValido(page) || !EsNumeroValido(pageSize))
-                return BadRequest(new { mensaje = "Solo se permiten números enteros positivos." });
+                return BadRequest(new { mensaje = "El número ingresado es inválido. Solo se permiten enteros positivos menores o iguales a 100000." });
 
             try
             {
@@ -139,4 +144,6 @@ namespace ParInpar.Controllers
         }
     }
 }
+
+
 
