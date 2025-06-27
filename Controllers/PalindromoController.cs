@@ -48,6 +48,9 @@ namespace ParInpar.Controllers
         {
             if (!EsPalabraValida(request.Palabra))
                 return BadRequest(new { mensaje = "La palabra no debe contener números, símbolos ni espacios, y debe tener al menos 2 letras." });
+            // Validar duplicados
+            if (_context.PalabrasVerificadas.Any(p => p.Palabra == request.Palabra))
+                return BadRequest(new { mensaje = "La palabra ya está registrada." });
 
             var nueva = new PalabraVerificada
             {
@@ -63,14 +66,21 @@ namespace ParInpar.Controllers
 
         [HttpPut("{id}")]
         [Authorize]
-        public IActionResult ActualizarPalabra(int id, [FromBody] PalabraRequest request)
+        public IActionResult ActualizarPalabra(string id, [FromBody] PalabraRequest request)
         {
+            // Validar id solo números positivos
+            if (!int.TryParse(id, out int idNum) || idNum <= 0)
+                return BadRequest(new { mensaje = "El id debe ser un número entero positivo." });
+
             if (!EsPalabraValida(request.Palabra))
                 return BadRequest(new { mensaje = "La palabra no debe contener números, símbolos ni espacios, y debe tener al menos 2 letras." });
 
-            var palabraExistente = _context.PalabrasVerificadas.FirstOrDefault(p => p.Id == id);
+            var palabraExistente = _context.PalabrasVerificadas.FirstOrDefault(p => p.Id == idNum);
             if (palabraExistente == null)
                 return NotFound(new { mensaje = "Palabra no encontrada" });
+            // Validar duplicados al editar
+            if (_context.PalabrasVerificadas.Any(p => p.Palabra == request.Palabra && p.Id != idNum))
+                return BadRequest(new { mensaje = "Ya existe un registro con esa palabra." });
 
             palabraExistente.Palabra = request.Palabra;
             palabraExistente.EsPalindromo = EsPalindromo(request.Palabra);
@@ -81,9 +91,13 @@ namespace ParInpar.Controllers
 
         [HttpDelete("{id}")]
         [Authorize]
-        public IActionResult EliminarPalabra(int id)
+        public IActionResult EliminarPalabra(string id)
         {
-            var palabra = _context.PalabrasVerificadas.FirstOrDefault(p => p.Id == id);
+            // Validar id solo números positivos
+            if (!int.TryParse(id, out int idNum) || idNum <= 0)
+                return BadRequest(new { mensaje = "El id debe ser un número entero positivo." });
+
+            var palabra = _context.PalabrasVerificadas.FirstOrDefault(p => p.Id == idNum);
             if (palabra == null)
                 return NotFound(new { mensaje = "No existe el registro" });
 

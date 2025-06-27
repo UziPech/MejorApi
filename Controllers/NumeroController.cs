@@ -54,9 +54,12 @@ namespace ParInpar.Controllers
         [Authorize]
         public IActionResult Guardar([FromBody] NumeroVerificado numero)
         {
+            // Validar duplicados por valor
+            if (_context.Numeros.Any(n => n.Valor == numero.Valor))
+                return BadRequest(new { mensaje = "El número ya está registrado." });
+            // Validar valor
             if (!EsNumeroValido(numero.Valor))
                 return BadRequest(new { mensaje = "El número ingresado es inválido. Solo se permiten enteros positivos menores o iguales a 100000." });
-
             try
             {
                 numero.EsPar = numero.Valor % 2 == 0;
@@ -72,18 +75,21 @@ namespace ParInpar.Controllers
 
         [HttpPut("{id}")]
         [Authorize]
-        public IActionResult Editar(int id, [FromBody] NumeroVerificado numeroEditado)
+        public IActionResult Editar(string id, [FromBody] NumeroVerificado numeroEditado)
         {
+            // Validar id solo números positivos
+            if (!int.TryParse(id, out int idNum) || idNum <= 0)
+                return BadRequest(new { mensaje = "El id debe ser un número entero positivo." });
             if (!EsNumeroValido(numeroEditado.Valor))
                 return BadRequest(new { mensaje = "El número ingresado es inválido. Solo se permiten enteros positivos menores o iguales a 100000." });
-
-            var numero = _context.Numeros.FirstOrDefault(n => n.Id == id);
+            var numero = _context.Numeros.FirstOrDefault(n => n.Id == idNum);
             if (numero == null)
                 return NotFound(new { mensaje = "Número no encontrado" });
-
+            // Validar duplicados al editar
+            if (_context.Numeros.Any(n => n.Valor == numeroEditado.Valor && n.Id != idNum))
+                return BadRequest(new { mensaje = "Ya existe un registro con ese valor." });
             numero.Valor = numeroEditado.Valor;
             numero.EsPar = numeroEditado.Valor % 2 == 0;
-
             try
             {
                 _context.SaveChanges();
@@ -97,12 +103,14 @@ namespace ParInpar.Controllers
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "admin")]
-        public IActionResult Eliminar(int id)
+        public IActionResult Eliminar(string id)
         {
-            var numero = _context.Numeros.FirstOrDefault(n => n.Id == id);
+            // Validar id solo números positivos
+            if (!int.TryParse(id, out int idNum) || idNum <= 0)
+                return BadRequest(new { mensaje = "El id debe ser un número entero positivo." });
+            var numero = _context.Numeros.FirstOrDefault(n => n.Id == idNum);
             if (numero == null)
                 return NotFound(new { mensaje = "Número no encontrado" });
-
             try
             {
                 _context.Numeros.Remove(numero);
